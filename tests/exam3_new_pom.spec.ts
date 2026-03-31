@@ -16,19 +16,23 @@ test.describe('③POM新規作成課題', () => {
   // NotificationPage
   // 作成するファイル: pages/NotificationPage.ts
   // 参考: LoginPage.ts の構造を真似て作成すること
+  //
+  // 注意: トグルの <input type="checkbox"> は CSS で非表示になっています。
+  // クリックには locator.evaluate(el => el.click()) を使ってください。
   // ════════════════════════════════════════════
 
   test.describe('通知設定ページ', () => {
 
     // 課題3-1: ページへの遷移
-    test('通知設定ページに遷移できる', async ({ page }) => {
+    // 実装したら test.fixme → test に書き換えてください
+    test.fixme('通知設定ページに遷移できる', async ({ page }) => {
       // TODO: NotificationPage を new して navigate() を呼び出す
       // ナビゲーションの nav-notification をクリックする想定
       await expect(page.getByTestId('nav-notification')).toBeVisible();
     });
 
     // 課題3-2: トグルの初期状態確認
-    test('デフォルトでタスク割当通知・期限リマインダー・メンション通知がONになっている', async ({ page }) => {
+    test.fixme('デフォルトでタスク割当通知・期限リマインダー・メンション通知がONになっている', async ({ page }) => {
       // TODO: NotificationPage に移動し、各トグルのisChecked()を確認する
       // notif-assign: true
       // notif-due: true
@@ -37,7 +41,7 @@ test.describe('③POM新規作成課題', () => {
     });
 
     // 課題3-3: トグルのON/OFF操作
-    test('コメント通知トグルをONにして保存できる', async ({ page }) => {
+    test.fixme('コメント通知トグルをONにして保存できる', async ({ page }) => {
       // TODO: NotificationPage に移動する
       // notif-comment トグルをクリックしてONにする
       // 保存ボタンをクリックする
@@ -45,7 +49,7 @@ test.describe('③POM新規作成課題', () => {
     });
 
     // 課題3-4: リセット操作
-    test('リセットするとトグルが初期状態に戻る', async ({ page }) => {
+    test.fixme('リセットするとトグルが初期状態に戻る', async ({ page }) => {
       // TODO: NotificationPage に移動する
       // notif-weekly トグルをクリックしてONにする（初期値はOFF）
       // リセットボタンをクリックする
@@ -53,7 +57,7 @@ test.describe('③POM新規作成課題', () => {
     });
 
     // 課題3-5: 保存→再表示の状態維持
-    test('トグルをONにして保存後、ページを再表示しても設定が保持されている', async ({ page }) => {
+    test.fixme('トグルをONにして保存後、ページを再表示しても設定が保持されている', async ({ page }) => {
       // TODO: NotificationPage に移動する
       // notif-comment をONにして保存する
       // 別のページに移動してからまた通知設定に戻る
@@ -70,13 +74,13 @@ test.describe('③POM新規作成課題', () => {
   test.describe('パスワード変更ページ', () => {
 
     // 課題3-6: ページへの遷移
-    test('パスワード変更ページに遷移できる', async ({ page }) => {
+    test.fixme('パスワード変更ページに遷移できる', async ({ page }) => {
       // TODO: PasswordPage を new して navigate() を呼び出す
       await expect(page.getByTestId('nav-password')).toBeVisible();
     });
 
     // 課題3-7: 正常系：パスワード変更成功
-    test('正しい情報を入力してパスワードを変更できる', async ({ page }) => {
+    test.fixme('正しい情報を入力してパスワードを変更できる', async ({ page }) => {
       // TODO: PasswordPage に移動する
       // 現在のパスワード: 'password'
       // 新しいパスワード: 'newPassword1'
@@ -86,14 +90,14 @@ test.describe('③POM新規作成課題', () => {
     });
 
     // 課題3-8: バリデーション：空欄送信
-    test('何も入力せず変更ボタンを押すとエラーが表示される', async ({ page }) => {
+    test.fixme('何も入力せず変更ボタンを押すとエラーが表示される', async ({ page }) => {
       // TODO: PasswordPage に移動する
       // 変更ボタンをクリックする
       // 「現在のパスワードを入力してください」エラーが表示されることを確認する
     });
 
     // 課題3-9: バリデーション：現在のパスワードが誤り
-    test('現在のパスワードが間違っているとエラーが表示される', async ({ page }) => {
+    test.fixme('現在のパスワードが間違っているとエラーが表示される', async ({ page }) => {
       // TODO: PasswordPage に移動する
       // 現在のパスワードに 'wrongpass' を入力する
       // 新しいパスワードに 'newPassword1' を入力する
@@ -103,7 +107,7 @@ test.describe('③POM新規作成課題', () => {
     });
 
     // 課題3-10: バリデーション：パスワード不一致
-    test('新しいパスワードと確認用が一致しないとエラーが表示される', async ({ page }) => {
+    test.fixme('新しいパスワードと確認用が一致しないとエラーが表示される', async ({ page }) => {
       // TODO: PasswordPage に移動する
       // 現在のパスワード: 'password'
       // 新しいパスワード: 'newPassword1'
@@ -113,7 +117,7 @@ test.describe('③POM新規作成課題', () => {
     });
 
     // 課題3-11: バリデーション：8文字未満
-    test('新しいパスワードが8文字未満だとエラーが表示される', async ({ page }) => {
+    test.fixme('新しいパスワードが8文字未満だとエラーが表示される', async ({ page }) => {
       // TODO: PasswordPage に移動する
       // 現在のパスワード: 'password'
       // 新しいパスワード: 'abc'（7文字未満）
@@ -122,7 +126,7 @@ test.describe('③POM新規作成課題', () => {
     });
 
     // 課題3-12: キャンセルで入力がリセットされる
-    test('キャンセルボタンを押すと入力内容がクリアされる', async ({ page }) => {
+    test.fixme('キャンセルボタンを押すと入力内容がクリアされる', async ({ page }) => {
       // TODO: PasswordPage に移動する
       // 現在のパスワードに 'password' を入力する
       // キャンセルボタンをクリックする
