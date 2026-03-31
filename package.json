@@ -1,0 +1,14 @@
+{
+  "name": "taskflow-playwright-exam",
+  "version": "1.0.0",
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:exam1": "playwright test exam1",
+    "test:exam2": "playwright test exam2"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.44.0",
+    "typescript": "^5.4.0"
+  }
+}
