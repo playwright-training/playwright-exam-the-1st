@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TaskFlow - タスク管理</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f0f2f5;--white:#fff;--primary:#4f46e5;--primary-h:#4338ca;
+  --danger:#ef4444;--danger-h:#dc2626;--success:#22c55e;--warning:#f59e0b;
+  --text:#1e293b;--muted:#64748b;--border:#e2e8f0;--radius:8px;
+  --shadow:0 1px 3px rgba(0,0,0,.1);
+}
+body{font-family:'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+nav{background:var(--primary);color:#fff;padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:56px}
+.nav-logo{font-weight:700;font-size:1.2rem}
+.nav-user{display:flex;align-items:center;gap:12px;font-size:.9rem}
+#logout-btn{background:rgba(255,255,255,.2);border:none;color:#fff;padding:6px 14px;border-radius:var(--radius);cursor:pointer;font-size:.85rem}
+#logout-btn:hover{background:rgba(255,255,255,.3)}
+.page{display:none}.page.active{display:block}
+#login-page.active{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);position:relative;overflow:hidden}
+#login-page::before{content:'';position:absolute;width:600px;height:600px;background:rgba(255,255,255,.06);border-radius:50%;top:-200px;right:-100px}
+#login-page::after{content:'';position:absolute;width:400px;height:400px;background:rgba(255,255,255,.04);border-radius:50%;bottom:-150px;left:-80px}
+.login-card{background:var(--white);border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.3);padding:44px 40px;width:380px;position:relative;z-index:1;animation:cardSlideUp .5s ease-out}
+@keyframes cardSlideUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+.login-logo{width:56px;height:56px;background:var(--primary);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;margin-bottom:20px;box-shadow:0 4px 12px rgba(79,70,229,.3)}
+.login-card h1{font-size:1.5rem;color:var(--text);margin-bottom:4px}
+.login-card .login-subtitle{color:var(--muted);font-size:.9rem;margin-bottom:28px}
+.form-group{margin-bottom:16px}
+label{display:block;font-size:.85rem;font-weight:600;margin-bottom:6px}
+input[type=text],input[type=password],input[type=email],textarea,select{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:.95rem;outline:none;transition:border .2s;background:#fff}
+input:focus,textarea:focus,select:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(79,70,229,.15)}
+.error-msg{color:var(--danger);font-size:.82rem;margin-top:4px;display:none}
+.error-msg.show{display:block}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:10px 18px;border:none;border-radius:var(--radius);font-size:.9rem;font-weight:600;cursor:pointer;transition:background .2s}
+.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:var(--primary-h)}
+.btn-danger{background:var(--danger);color:#fff}.btn-danger:hover{background:var(--danger-h)}
+.btn-secondary{background:var(--border);color:var(--text)}.btn-secondary:hover{background:#cbd5e1}
+.btn-warning{background:var(--warning);color:#fff}.btn-warning:hover{background:#d97706}
+.btn-success{background:var(--success);color:#fff}.btn-success:hover{background:#16a34a}
+.btn-full{width:100%;justify-content:center}
+.btn-sm{padding:5px 10px;font-size:.8rem}
+.login-hint{margin-top:16px;font-size:.8rem;color:var(--muted);background:#f8fafc;padding:10px;border-radius:var(--radius)}
+.container{max-width:1000px;margin:0 auto;padding:24px 16px}
+
+/* SIDEBAR NAV */
+.app-layout{display:flex;gap:0;min-height:calc(100vh - 56px)}
+.sidebar{width:200px;background:var(--white);border-right:1px solid var(--border);padding:16px 0;flex-shrink:0}
+.sidebar-item{display:flex;align-items:center;gap:10px;padding:10px 20px;cursor:pointer;font-size:.9rem;color:var(--muted);border-left:3px solid transparent;transition:all .15s}
+.sidebar-item:hover{background:#f8fafc;color:var(--text)}
+.sidebar-item.active{color:var(--primary);font-weight:700;border-left-color:var(--primary);background:#f5f3ff}
+.sidebar-icon{font-size:1.1rem;width:20px;text-align:center}
+.main-content{flex:1;padding:28px 24px;overflow:auto}
+
+/* SECTION */
+.section{display:none}.section.active{display:block}
+.section-title{font-size:1.15rem;font-weight:700;margin-bottom:20px}
+
+/* TOOLBAR */
+.toolbar{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:20px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.toolbar-right{display:flex;gap:8px;align-items:center;margin-left:auto;flex-wrap:wrap}
+#search-input{width:180px}
+#filter-status,#filter-assignee{width:120px}
+
+/* TASK LIST */
+.task-list{display:flex;flex-direction:column;gap:10px}
+.task-card{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px 16px;display:flex;align-items:flex-start;gap:12px;transition:box-shadow .2s}
+.task-card:hover{box-shadow:0 4px 12px rgba(0,0,0,.1)}
+.task-check{width:20px;height:20px;border-radius:50%;border:2px solid var(--border);cursor:pointer;flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.task-check.done{background:var(--success);border-color:var(--success)}
+.task-check.done::after{content:'✓';color:#fff;font-size:.75rem;font-weight:700}
+.task-body{flex:1;min-width:0}
+.task-title{font-weight:600;font-size:.95rem}
+.task-title.done{text-decoration:line-through;color:var(--muted)}
+.task-meta{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;align-items:center}
+.task-memo{font-size:.8rem;color:var(--muted);margin-top:4px;font-style:italic}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.75rem;font-weight:600}
+.badge-high{background:#fee2e2;color:#b91c1c}
+.badge-medium{background:#fef3c7;color:#92400e}
+.badge-low{background:#dcfce7;color:#15803d}
+.badge-done{background:#dcfce7;color:#15803d}
+.badge-doing{background:#dbeafe;color:#1d4ed8}
+.badge-todo{background:#f1f5f9;color:var(--muted)}
+.badge-review{background:#f3e8ff;color:#7c3aed}
+.task-due,.task-assignee{font-size:.78rem;color:var(--muted)}
+.task-actions{display:flex;gap:6px;flex-shrink:0}
+.empty-state{text-align:center;padding:60px 20px;color:var(--muted)}
+
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:100;opacity:0;pointer-events:none;transition:opacity .2s}
+.overlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--white);border-radius:12px;width:500px;max-width:95vw;padding:28px;box-shadow:0 8px 32px rgba(0,0,0,.18);transform:translateY(12px);transition:transform .2s;max-height:90vh;overflow-y:auto}
+.overlay.open .modal{transform:translateY(0)}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.modal-header h3{font-size:1.1rem}
+.modal-close{background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--muted);line-height:1}
+.modal-close:hover{color:var(--text)}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;flex-wrap:wrap}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* PROFILE */
+.profile-card{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);padding:28px;max-width:500px}
+.profile-card h2{margin-bottom:20px;font-size:1.1rem}
+.profile-avatar{width:72px;height:72px;border-radius:50%;background:var(--primary);color:#fff;font-size:2rem;display:flex;align-items:center;justify-content:center;margin-bottom:20px}
+
+/* NOTIFICATION */
+.notif-card{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);padding:24px;max-width:520px}
+.notif-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border)}
+.notif-row:last-of-type{border-bottom:none}
+.notif-label{font-size:.95rem;font-weight:500}
+.notif-desc{font-size:.8rem;color:var(--muted);margin-top:2px}
+.toggle{position:relative;width:44px;height:24px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;inset:0;background:#cbd5e1;border-radius:999px;cursor:pointer;transition:.3s}
+.toggle-slider::before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.3s}
+.toggle input:checked+.toggle-slider{background:var(--primary)}
+.toggle input:checked+.toggle-slider::before{transform:translateX(20px)}
+
+/* TEAM */
+.member-list{display:flex;flex-direction:column;gap:10px}
+.member-card{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px 18px;display:flex;align-items:center;gap:14px}
+.member-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem;color:#fff;flex-shrink:0}
+.member-info{flex:1}
+.member-name{font-weight:600;font-size:.95rem}
+.member-role{font-size:.8rem;color:var(--muted);margin-top:2px}
+.member-actions{display:flex;gap:6px}
+.search-bar{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);padding:12px 16px;margin-bottom:16px;display:flex;gap:10px;align-items:center}
+.search-bar input{flex:1}
+
+/* REPORT */
+.report-toolbar{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px 16px;margin-bottom:20px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:24px}
+.stat-card{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;text-align:center}
+.stat-num{font-size:2rem;font-weight:700;color:var(--primary)}
+.stat-label{font-size:.82rem;color:var(--muted);margin-top:4px}
+.report-table{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+.report-table table{width:100%;border-collapse:collapse;font-size:.88rem}
+.report-table th{background:#f8fafc;padding:10px 14px;text-align:left;font-weight:600;border-bottom:1px solid var(--border)}
+.report-table td{padding:10px 14px;border-bottom:1px solid var(--border)}
+.report-table tr:last-child td{border-bottom:none}
+.report-table tr:hover td{background:#f8fafc}
+
+/* PASSWORD */
+.pw-card{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);padding:28px;max-width:440px}
+.pw-strength{height:4px;border-radius:2px;margin-top:6px;background:var(--border);overflow:hidden}
+.pw-strength-bar{height:100%;border-radius:2px;transition:width .3s,background .3s;width:0}
+
+/* TOAST */
+.success-toast{position:fixed;bottom:24px;right:24px;background:var(--success);color:#fff;padding:12px 20px;border-radius:var(--radius);font-weight:600;font-size:.9rem;box-shadow:0 4px 12px rgba(0,0,0,.15);opacity:0;transform:translateY(8px);transition:all .3s;z-index:200}
+.success-toast.show{opacity:1;transform:translateY(0)}
+.divider{height:1px;background:var(--border);margin:16px 0}
+</style>
+</head>
+<body>
+
+<!-- ========== LOGIN ========== -->
+<div id="login-page" class="page active">
+    <div class="login-card">
+      <div class="login-logo">✅</div>
+      <h1>TaskFlow</h1>
+      <p class="login-subtitle">タスク管理アプリにログイン</p>
+      <div class="form-group">
+        <label for="username">ユーザー名</label>
+        <input type="text" id="username" data-testid="username-input" placeholder="ユーザー名を入力" autocomplete="off"/>
+        <div class="error-msg" id="username-error">ユーザー名を入力してください</div>
+      </div>
+      <div class="form-group">
+        <label for="password">パスワード</label>
+        <input type="password" id="password" data-testid="password-input" placeholder="パスワードを入力"/>
+        <div class="error-msg" id="password-error">パスワードを入力してください</div>
+      </div>
+      <div class="error-msg" id="login-error" style="margin-bottom:12px">ユーザー名またはパスワードが正しくありません</div>
+      <button class="btn btn-primary btn-full" id="login-btn" data-testid="login-btn">ログイン</button>
+      <div class="login-hint">テスト用アカウント：ユーザー名 <strong>admin</strong> ／ パスワード <strong>password</strong></div>
+    </div>
+</div>
+
+<!-- ========== APP ========== -->
+<div id="app-page" class="page">
+  <nav>
+    <span class="nav-logo">✅ TaskFlow</span>
+    <div class="nav-user">
+      <span id="nav-username"></span>
+      <button id="logout-btn" data-testid="logout-btn">ログアウト</button>
+    </div>
+  </nav>
+  <div class="app-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-item active" data-section="tasks" data-testid="nav-tasks"><span class="sidebar-icon">📋</span>タスク一覧</div>
+      <div class="sidebar-item" data-section="team" data-testid="nav-team"><span class="sidebar-icon">👥</span>チーム</div>
+      <div class="sidebar-item" data-section="report" data-testid="nav-report"><span class="sidebar-icon">📊</span>レポート</div>
+      <div class="sidebar-item" data-section="notification" data-testid="nav-notification"><span class="sidebar-icon">🔔</span>通知設定</div>
+      <div class="sidebar-item" data-section="password" data-testid="nav-password"><span class="sidebar-icon">🔑</span>パスワード変更</div>
+      <div class="sidebar-item" data-section="profile" data-testid="nav-profile"><span class="sidebar-icon">👤</span>プロフィール</div>
+    </aside>
+
+    <div class="main-content">
+
+      <!-- ── TASKS ── -->
+      <div class="section active" id="section-tasks">
+        <div class="toolbar">
+          <input type="text" id="search-input" data-testid="search-input" placeholder="🔍 タスクを検索..."/>
+          <select id="filter-status" data-testid="filter-status">
+            <option value="all">すべて</option>
+            <option value="todo">未着手</option>
+            <option value="doing">進行中</option>
+            <option value="review">レビュー中</option>
+            <option value="done">完了</option>
+          </select>
+          <select id="filter-assignee" data-testid="filter-assignee">
+            <option value="all">担当者：全員</option>
+            <option value="田中">田中</option>
+            <option value="鈴木">鈴木</option>
+            <option value="佐藤">佐藤</option>
+            <option value="未割当">未割当</option>
+          </select>
+          <div class="toolbar-right">
+            <button class="btn btn-primary" id="add-task-btn" data-testid="add-task-btn">＋ タスク追加</button>
+          </div>
+        </div>
+        <div class="task-list" id="task-list" data-testid="task-list"></div>
+        <div class="empty-state" id="empty-state" style="display:none"><p>タスクが見つかりません</p><small>条件を変えて検索してみてください</small></div>
+      </div>
+
+      <!-- ── TEAM ── -->
+      <div class="section" id="section-team">
+        <p class="section-title">チームメンバー</p>
+        <div class="search-bar">
+          <input type="text" id="member-search" data-testid="member-search" placeholder="🔍 メンバーを検索..."/>
+          <button class="btn btn-primary btn-sm" id="invite-btn" data-testid="invite-btn">＋ 招待</button>
+        </div>
+        <div class="member-list" id="member-list" data-testid="member-list"></div>
+      </div>
+
+      <!-- ── REPORT ── -->
+      <div class="section" id="section-report">
+        <p class="section-title">レポート</p>
+        <div class="report-toolbar">
+          <label style="font-size:.85rem;font-weight:600;margin:0">期間：</label>
+          <select id="report-period" data-testid="report-period">
+            <option value="week">今週</option>
+            <option value="month">今月</option>
+            <option value="all">全期間</option>
+          </select>
+          <select id="report-assignee" data-testid="report-assignee">
+            <option value="all">担当者：全員</option>
+            <option value="田中">田中</option>
+            <option value="鈴木">鈴木</option>
+            <option value="佐藤">佐藤</option>
+          </select>
+          <button class="btn btn-secondary btn-sm" id="report-export-btn" data-testid="report-export-btn">📥 エクスポート</button>
+        </div>
+        <div class="stats-grid" id="stats-grid"></div>
+        <div class="report-table">
+          <table>
+            <thead><tr><th>タスク名</th><th>担当者</th><th>ステータス</th><th>優先度</th><th>期限</th></tr></thead>
+            <tbody id="report-tbody" data-testid="report-table"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── NOTIFICATION ── -->
+      <div class="section" id="section-notification">
+        <p class="section-title">通知設定</p>
+        <div class="notif-card">
+          <div class="notif-row">
+            <div><div class="notif-label">タスク割当通知</div><div class="notif-desc">自分にタスクが割り当てられたとき</div></div>
+            <label class="toggle"><input type="checkbox" id="notif-assign" data-testid="notif-assign" checked/><span class="toggle-slider"></span></label>
+          </div>
+          <div class="notif-row">
+            <div><div class="notif-label">期限リマインダー</div><div class="notif-desc">期限の1日前に通知</div></div>
+            <label class="toggle"><input type="checkbox" id="notif-due" data-testid="notif-due" checked/><span class="toggle-slider"></span></label>
+          </div>
+          <div class="notif-row">
+            <div><div class="notif-label">コメント通知</div><div class="notif-desc">自分のタスクにコメントがついたとき</div></div>
+            <label class="toggle"><input type="checkbox" id="notif-comment" data-testid="notif-comment"/><span class="toggle-slider"></span></label>
+          </div>
+          <div class="notif-row">
+            <div><div class="notif-label">週次サマリー</div><div class="notif-desc">毎週月曜にサマリーメールを受け取る</div></div>
+            <label class="toggle"><input type="checkbox" id="notif-weekly" data-testid="notif-weekly"/><span class="toggle-slider"></span></label>
+          </div>
+          <div class="notif-row">
+            <div><div class="notif-label">メンション通知</div><div class="notif-desc">コメントでメンションされたとき</div></div>
+            <label class="toggle"><input type="checkbox" id="notif-mention" data-testid="notif-mention" checked/><span class="toggle-slider"></span></label>
+          </div>
+          <div style="margin-top:20px;display:flex;gap:10px">
+            <button class="btn btn-primary" id="save-notif-btn" data-testid="save-notif-btn">保存する</button>
+            <button class="btn btn-secondary" id="reset-notif-btn" data-testid="reset-notif-btn">リセット</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── PASSWORD ── -->
+      <div class="section" id="section-password">
+        <p class="section-title">パスワード変更</p>
+        <div class="pw-card">
+          <div class="form-group">
+            <label for="pw-current">現在のパスワード</label>
+            <input type="password" id="pw-current" data-testid="pw-current" placeholder="現在のパスワード"/>
+            <div class="error-msg" id="pw-current-error">現在のパスワードを入力してください</div>
+            <div class="error-msg" id="pw-current-wrong">現在のパスワードが正しくありません</div>
+          </div>
+          <div class="form-group">
+            <label for="pw-new">新しいパスワード</label>
+            <input type="password" id="pw-new" data-testid="pw-new" placeholder="8文字以上"/>
+            <div class="pw-strength"><div class="pw-strength-bar" id="pw-strength-bar"></div></div>
+            <div class="error-msg" id="pw-new-error">8文字以上で入力してください</div>
+          </div>
+          <div class="form-group">
+            <label for="pw-confirm">新しいパスワード（確認）</label>
+            <input type="password" id="pw-confirm" data-testid="pw-confirm" placeholder="もう一度入力"/>
+            <div class="error-msg" id="pw-confirm-error">パスワードが一致しません</div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:4px">
+            <button class="btn btn-primary" id="save-pw-btn" data-testid="save-pw-btn">変更する</button>
+            <button class="btn btn-secondary" id="cancel-pw-btn" data-testid="cancel-pw-btn">キャンセル</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── PROFILE ── -->
+      <div class="section" id="section-profile">
+        <p class="section-title">プロフィール</p>
+        <div class="profile-card">
+          <div class="profile-avatar" id="profile-avatar">A</div>
+          <div class="form-group">
+            <label for="profile-name">表示名</label>
+            <input type="text" id="profile-name" data-testid="profile-name"/>
+            <div class="error-msg" id="profile-name-error">表示名を入力してください</div>
+          </div>
+          <div class="form-group">
+            <label for="profile-email">メールアドレス</label>
+            <input type="email" id="profile-email" data-testid="profile-email"/>
+            <div class="error-msg" id="profile-email-error">有効なメールアドレスを入力してください</div>
+          </div>
+          <div class="form-group">
+            <label for="profile-bio">自己紹介</label>
+            <textarea id="profile-bio" rows="3" data-testid="profile-bio" placeholder="自己紹介を入力..."></textarea>
+          </div>
+          <div style="display:flex;gap:10px">
+            <button class="btn btn-primary" id="save-profile-btn" data-testid="save-profile-btn">保存する</button>
+            <button class="btn btn-secondary" id="cancel-profile-btn" data-testid="cancel-profile-btn">キャンセル</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /main-content -->
+  </div><!-- /app-layout -->
+</div><!-- /app-page -->
+
+<!-- ========== TASK MODAL ========== -->
+<div class="overlay" id="task-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-title">タスクを追加</h3>
+      <button class="modal-close" id="modal-close" aria-label="閉じる">×</button>
+    </div>
+    <div class="form-group">
+      <label for="task-title-input">タスク名 <span style="color:var(--danger)">*</span></label>
+      <input type="text" id="task-title-input" data-testid="task-title-input" placeholder="タスク名を入力"/>
+      <div class="error-msg" id="task-title-error">タスク名を入力してください</div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="task-status-input">ステータス</label>
+        <select id="task-status-input" data-testid="task-status-input">
+          <option value="todo">未着手</option>
+          <option value="doing">進行中</option>
+          <option value="review">レビュー中</option>
+          <option value="done">完了</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="task-priority-input">優先度</label>
+        <select id="task-priority-input" data-testid="task-priority-input">
+          <option value="high">高</option>
+          <option value="medium">中</option>
+          <option value="low">低</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="task-assignee-input">担当者</label>
+        <select id="task-assignee-input" data-testid="task-assignee-input">
+          <option value="">未割当</option>
+          <option value="田中">田中</option>
+          <option value="鈴木">鈴木</option>
+          <option value="佐藤">佐藤</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="task-due-input">期限</label>
+        <input type="text" id="task-due-input" data-testid="task-due-input" placeholder="例：2025-12-31"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="task-memo-input">メモ</label>
+      <textarea id="task-memo-input" data-testid="task-memo-input" rows="2" placeholder="補足情報を入力..."></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" id="modal-cancel">キャンセル</button>
+      <button class="btn btn-warning" id="modal-draft" data-testid="modal-draft">下書き保存</button>
+      <button class="btn btn-primary" id="modal-save" data-testid="modal-save">保存する</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== CONFIRM MODAL ========== -->
+<div class="overlay" id="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+  <div class="modal" style="width:380px">
+    <div class="modal-header">
+      <h3 id="confirm-title">タスクを削除</h3>
+      <button class="modal-close" id="confirm-close" aria-label="閉じる">×</button>
+    </div>
+    <p style="color:var(--muted);font-size:.95rem">以下のタスクを削除しますか？この操作は取り消せません。</p>
+    <p id="confirm-task-name" style="font-weight:700;margin-top:10px"></p>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" id="confirm-cancel">キャンセル</button>
+      <button class="btn btn-danger" id="confirm-delete" data-testid="confirm-delete">削除する</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== MEMBER DETAIL MODAL ========== -->
+<div class="overlay" id="member-modal" role="dialog" aria-modal="true" aria-labelledby="member-modal-title">
+  <div class="modal" style="width:420px">
+    <div class="modal-header">
+      <h3 id="member-modal-title">メンバー詳細</h3>
+      <button class="modal-close" id="member-modal-close" aria-label="閉じる">×</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
+      <div id="member-modal-avatar" style="width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:700;color:#fff"></div>
+      <div>
+        <div id="member-modal-name" style="font-size:1.1rem;font-weight:700"></div>
+        <div id="member-modal-role" style="color:var(--muted);font-size:.85rem;margin-top:2px"></div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>メールアドレス</label>
+      <div id="member-modal-email" data-testid="member-modal-email" style="padding:10px 12px;background:#f8fafc;border-radius:var(--radius);font-size:.9rem"></div>
+    </div>
+    <div class="form-group">
+      <label>担当タスク数</label>
+      <div id="member-modal-taskcount" data-testid="member-modal-taskcount" style="padding:10px 12px;background:#f8fafc;border-radius:var(--radius);font-size:.9rem"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" id="member-modal-cancel">閉じる</button>
+      <button class="btn btn-danger btn-sm" id="member-modal-remove" data-testid="member-modal-remove">メンバーを削除</button>
+    </div>
+  </div>
+</div>
+
+<!-- INVITE MODAL -->
+<div class="overlay" id="invite-modal" role="dialog" aria-modal="true" aria-labelledby="invite-title">
+  <div class="modal" style="width:400px">
+    <div class="modal-header">
+      <h3 id="invite-title">メンバーを招待</h3>
+      <button class="modal-close" id="invite-modal-close" aria-label="閉じる">×</button>
+    </div>
+    <div class="form-group">
+      <label for="invite-email">メールアドレス</label>
+      <input type="email" id="invite-email" data-testid="invite-email" placeholder="例：user@example.com"/>
+      <div class="error-msg" id="invite-email-error">有効なメールアドレスを入力してください</div>
+    </div>
+    <div class="form-group">
+      <label for="invite-role">ロール</label>
+      <select id="invite-role" data-testid="invite-role">
+        <option value="member">メンバー</option>
+        <option value="admin">管理者</option>
+        <option value="viewer">閲覧者</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" id="invite-cancel">キャンセル</button>
+      <button class="btn btn-primary" id="invite-send" data-testid="invite-send">招待を送る</button>
+    </div>
+  </div>
+</div>
+
+<div class="success-toast" id="toast" role="status"></div>
+
+<script>
+// ─── DATA ─────────────────────────────────────────────
+let tasks = [
+  {id:1,title:'Playwrightの環境構築',status:'done',  priority:'high',  assignee:'田中',due:'2025-04-01',memo:'Node.js 18以上が必要'},
+  {id:2,title:'ログインテストを作成する',status:'doing',priority:'high',  assignee:'鈴木',due:'2025-04-10',memo:''},
+  {id:3,title:'POMクラスを設計する',   status:'review',priority:'medium',assignee:'田中',due:'2025-04-15',memo:'レビュー依頼済み'},
+  {id:4,title:'CI/CDに組み込む',       status:'todo', priority:'medium',assignee:'佐藤',due:'2025-04-20',memo:''},
+  {id:5,title:'レポートをまとめる',    status:'todo', priority:'low',   assignee:'',   due:'2025-04-30',memo:''},
+  {id:6,title:'エラーハンドリングのテスト',status:'doing',priority:'high',assignee:'佐藤',due:'2025-04-12',memo:'境界値を重点的に'},
+];
+let nextId = 7;
+let members = [
+  {id:1,name:'田中 太郎',role:'管理者',email:'tanaka@example.com',color:'#4f46e5'},
+  {id:2,name:'鈴木 花子',role:'メンバー',email:'suzuki@example.com',color:'#0891b2'},
+  {id:3,name:'佐藤 次郎',role:'メンバー',email:'sato@example.com',color:'#059669'},
+];
+let profileData = {name:'Admin User',email:'admin@example.com',bio:''};
+let editingId = null, deletingId = null, viewingMemberId = null;
+let currentPw = 'password';
+
+// ─── UTILS ────────────────────────────────────────────
+const $  = id => document.getElementById(id);
+const openModal  = id => $(id).classList.add('open');
+const closeModal = id => $(id).classList.remove('open');
+const showToast  = (msg,color='var(--success)') => {
+  const t=$('toast'); t.textContent=msg; t.style.background=color; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+};
+const statusLabel  = s=>({todo:'未着手',doing:'進行中',review:'レビュー中',done:'完了'}[s]||s);
+const statusBadge  = s=>({todo:'badge-todo',doing:'badge-doing',review:'badge-review',done:'badge-done'}[s]);
+const priorityLabel= p=>({high:'高',medium:'中',low:'低'}[p]||p);
+const priorityBadge= p=>({high:'badge-high',medium:'badge-medium',low:'badge-low'}[p]);
+
+// ─── SIDEBAR ──────────────────────────────────────────
+document.querySelectorAll('.sidebar-item').forEach(el=>{
+  el.onclick=()=>{
+    document.querySelectorAll('.sidebar-item').forEach(e=>e.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(e=>e.classList.remove('active'));
+    el.classList.add('active');
+    const sec = el.dataset.section;
+    $('section-'+sec).classList.add('active');
+    if(sec==='report') renderReport();
+    if(sec==='team')   renderMembers();
+    if(sec==='profile'){
+      $('profile-name').value=profileData.name;
+      $('profile-email').value=profileData.email;
+      $('profile-bio').value=profileData.bio;
+      $('profile-avatar').textContent=profileData.name.charAt(0).toUpperCase();
+    }
+  };
+});
+
+// ─── RENDER TASKS ─────────────────────────────────────
+function renderTasks(){
+  const q  = $('search-input').value.trim().toLowerCase();
+  const fs = $('filter-status').value;
+  const fa = $('filter-assignee').value;
+  const list = tasks.filter(t=>
+    (fs==='all'||t.status===fs) &&
+    (fa==='all'||(fa==='未割当'?!t.assignee:t.assignee===fa)) &&
+    (!q||t.title.toLowerCase().includes(q)||t.memo.toLowerCase().includes(q))
+  );
+  const el=$('task-list');
+  $('empty-state').style.display=list.length?'none':'block';
+  el.innerHTML=list.map(t=>`
+    <div class="task-card" data-testid="task-card" data-id="${t.id}">
+      <div class="task-check ${t.status==='done'?'done':''}" data-testid="task-check-${t.id}" onclick="toggleDone(${t.id})"></div>
+      <div class="task-body">
+        <div class="task-title ${t.status==='done'?'done':''}" data-testid="task-title-${t.id}">${t.title}</div>
+        <div class="task-meta">
+          <span class="badge ${statusBadge(t.status)}" data-testid="task-status-${t.id}">${statusLabel(t.status)}</span>
+          <span class="badge ${priorityBadge(t.priority)}" data-testid="task-priority-${t.id}">優先度：${priorityLabel(t.priority)}</span>
+          ${t.assignee?`<span class="task-assignee" data-testid="task-assignee-${t.id}">👤 ${t.assignee}</span>`:'<span class="task-assignee" data-testid="task-assignee-${t.id}" style="color:#94a3b8">未割当</span>'}
+          ${t.due?`<span class="task-due" data-testid="task-due-${t.id}">📅 ${t.due}</span>`:''}
+        </div>
+        ${t.memo?`<div class="task-memo" data-testid="task-memo-${t.id}">💬 ${t.memo}</div>`:''}
+      </div>
+      <div class="task-actions">
+        <button class="btn btn-secondary btn-sm" data-testid="edit-btn-${t.id}" onclick="openEdit(${t.id})">編集</button>
+        <button class="btn btn-danger btn-sm" data-testid="delete-btn-${t.id}" onclick="openConfirmDelete(${t.id})">削除</button>
+      </div>
+    </div>
+  `).join('');
+}
+function toggleDone(id){
+  const t=tasks.find(t=>t.id===id);
+  if(!t)return;
+  t.status=t.status==='done'?'todo':'done';
+  renderTasks();
+}
+$('search-input').oninput=renderTasks;
+$('filter-status').onchange=renderTasks;
+$('filter-assignee').onchange=renderTasks;
+
+// ─── TASK MODAL ───────────────────────────────────────
+function resetTaskModal(){
+  $('task-title-input').value='';
+  $('task-status-input').value='todo';
+  $('task-priority-input').value='medium';
+  $('task-assignee-input').value='';
+  $('task-due-input').value='';
+  $('task-memo-input').value='';
+  $('task-title-error').classList.remove('show');
+}
+$('add-task-btn').onclick=()=>{
+  editingId=null;
+  $('modal-title').textContent='タスクを追加';
+  resetTaskModal();
+  openModal('task-modal');
+  setTimeout(()=>$('task-title-input').focus(),100);
+};
+function openEdit(id){
+  const t=tasks.find(t=>t.id===id); if(!t)return;
+  editingId=id;
+  $('modal-title').textContent='タスクを編集';
+  $('task-title-input').value=t.title;
+  $('task-status-input').value=t.status;
+  $('task-priority-input').value=t.priority;
+  $('task-assignee-input').value=t.assignee||'';
+  $('task-due-input').value=t.due||'';
+  $('task-memo-input').value=t.memo||'';
+  $('task-title-error').classList.remove('show');
+  openModal('task-modal');
+  setTimeout(()=>$('task-title-input').focus(),100);
+}
+function saveTask(asDraft=false){
+  const title=$('task-title-input').value.trim();
+  if(!title){$('task-title-error').classList.add('show');return;}
+  $('task-title-error').classList.remove('show');
+  const data={title,status:asDraft?'todo':$('task-status-input').value,priority:$('task-priority-input').value,assignee:$('task-assignee-input').value,due:$('task-due-input').value.trim(),memo:$('task-memo-input').value.trim()};
+  if(editingId){Object.assign(tasks.find(t=>t.id===editingId),data);showToast('タスクを更新しました');}
+  else{tasks.unshift({id:nextId++,...data});showToast(asDraft?'下書きとして保存しました':'タスクを追加しました');}
+  closeModal('task-modal');renderTasks();
+}
+$('modal-save').onclick=()=>saveTask(false);
+$('modal-draft').onclick=()=>saveTask(true);
+$('modal-close').onclick=$('modal-cancel').onclick=()=>closeModal('task-modal');
+
+// ─── CONFIRM DELETE ───────────────────────────────────
+function openConfirmDelete(id){
+  deletingId=id;
+  $('confirm-task-name').textContent=tasks.find(t=>t.id===id)?.title||'';
+  openModal('confirm-modal');
+}
+$('confirm-delete').onclick=()=>{
+  tasks=tasks.filter(t=>t.id!==deletingId);
+  closeModal('confirm-modal');showToast('タスクを削除しました');renderTasks();
+};
+$('confirm-close').onclick=$('confirm-cancel').onclick=()=>closeModal('confirm-modal');
+
+// ─── TEAM ─────────────────────────────────────────────
+function renderMembers(query=''){
+  const list=members.filter(m=>!query||m.name.includes(query)||m.email.includes(query));
+  $('member-list').innerHTML=list.map(m=>`
+    <div class="member-card" data-testid="member-card-${m.id}">
+      <div class="member-avatar" style="background:${m.color}">${m.name.charAt(0)}</div>
+      <div class="member-info">
+        <div class="member-name" data-testid="member-name-${m.id}">${m.name}</div>
+        <div class="member-role" data-testid="member-role-${m.id}">${m.role}</div>
+      </div>
+      <div class="member-actions">
+        <button class="btn btn-secondary btn-sm" data-testid="member-detail-btn-${m.id}" onclick="openMemberDetail(${m.id})">詳細</button>
+      </div>
+    </div>
+  `).join('');
+}
+$('member-search').oninput=e=>renderMembers(e.target.value.trim());
+function openMemberDetail(id){
+  const m=members.find(m=>m.id===id); if(!m)return;
+  viewingMemberId=id;
+  $('member-modal-title').textContent='メンバー詳細';
+  $('member-modal-avatar').style.background=m.color;
+  $('member-modal-avatar').textContent=m.name.charAt(0);
+  $('member-modal-name').textContent=m.name;
+  $('member-modal-role').textContent=m.role;
+  $('member-modal-email').textContent=m.email;
+  $('member-modal-taskcount').textContent=tasks.filter(t=>t.assignee===m.name.split(' ')[0]).length+'件';
+  openModal('member-modal');
+}
+$('member-modal-close').onclick=$('member-modal-cancel').onclick=()=>closeModal('member-modal');
+$('member-modal-remove').onclick=()=>{
+  const idx=members.findIndex(m=>m.id===viewingMemberId);
+  if(idx!==-1) members.splice(idx,1);
+  closeModal('member-modal');showToast('メンバーを削除しました','var(--danger)');renderMembers($('member-search').value.trim());
+};
+$('invite-btn').onclick=()=>{$('invite-email').value='';$('invite-role').value='member';$('invite-email-error').classList.remove('show');openModal('invite-modal');};
+$('invite-modal-close').onclick=$('invite-cancel').onclick=()=>closeModal('invite-modal');
+$('invite-send').onclick=()=>{
+  const email=$('invite-email').value.trim();
+  const ok=/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  $('invite-email-error').classList.toggle('show',!ok);
+  if(!ok)return;
+  closeModal('invite-modal');showToast('招待メールを送信しました');
+};
+
+// ─── REPORT ───────────────────────────────────────────
+function renderReport(){
+  const period=$('report-period').value;
+  const assignee=$('report-assignee').value;
+  let list=tasks;
+  // 期間フィルター（デモ用基準日: 2025-04-14）
+  if(period==='week'){
+    list=list.filter(t=>t.due>='2025-04-08'&&t.due<='2025-04-14');
+  }else if(period==='month'){
+    list=list.filter(t=>t.due>='2025-04-01'&&t.due<='2025-04-30');
+  }
+  if(assignee!=='all') list=list.filter(t=>t.assignee===assignee);
+  const total=list.length, done=list.filter(t=>t.status==='done').length,
+        doing=list.filter(t=>t.status==='doing'||t.status==='review').length,
+        todo=list.filter(t=>t.status==='todo').length;
+  $('stats-grid').innerHTML=[
+    {num:total,label:'総タスク数',color:'var(--primary)'},
+    {num:done, label:'完了',color:'var(--success)'},
+    {num:doing,label:'進行中／レビュー中',color:'var(--warning)'},
+    {num:todo, label:'未着手',color:'var(--muted)'},
+  ].map(s=>`<div class="stat-card"><div class="stat-num" style="color:${s.color}">${s.num}</div><div class="stat-label">${s.label}</div></div>`).join('');
+  $('report-tbody').innerHTML=list.map(t=>`
+    <tr data-testid="report-row-${t.id}">
+      <td>${t.title}</td>
+      <td>${t.assignee||'未割当'}</td>
+      <td><span class="badge ${statusBadge(t.status)}">${statusLabel(t.status)}</span></td>
+      <td><span class="badge ${priorityBadge(t.priority)}">${priorityLabel(t.priority)}</span></td>
+      <td>${t.due||'—'}</td>
+    </tr>
+  `).join('');
+}
+$('report-period').onchange=renderReport;
+$('report-assignee').onchange=renderReport;
+$('report-export-btn').onclick=()=>showToast('エクスポートしました（CSV）');
+
+// ─── NOTIFICATION ─────────────────────────────────────
+const defaultNotif={assign:true,due:true,comment:false,weekly:false,mention:true};
+$('save-notif-btn').onclick=()=>showToast('通知設定を保存しました');
+$('reset-notif-btn').onclick=()=>{
+  Object.entries(defaultNotif).forEach(([k,v])=>$('notif-'+k).checked=v);
+  showToast('通知設定をリセットしました');
+};
+
+// ─── PASSWORD ─────────────────────────────────────────
+$('pw-new').oninput=()=>{
+  const v=$('pw-new').value, len=v.length;
+  const bar=$('pw-strength-bar');
+  if(!len){bar.style.width='0';return;}
+  const strength=len<6?1:len<10?2:3;
+  bar.style.width=['33%','66%','100%'][strength-1];
+  bar.style.background=['var(--danger)','var(--warning)','var(--success)'][strength-1];
+};
+$('save-pw-btn').onclick=()=>{
+  const cur=$('pw-current').value, nw=$('pw-new').value, conf=$('pw-confirm').value;
+  let ok=true;
+  $('pw-current-error').classList.toggle('show',!cur); if(!cur)ok=false;
+  $('pw-current-wrong').classList.remove('show');
+  if(cur&&cur!==currentPw){$('pw-current-wrong').classList.add('show');ok=false;}
+  $('pw-new-error').classList.toggle('show',nw.length<8); if(nw.length<8)ok=false;
+  $('pw-confirm-error').classList.toggle('show',nw!==conf&&conf.length>0); if(nw!==conf)ok=false;
+  if(!ok)return;
+  currentPw=nw;$('pw-current').value='';$('pw-new').value='';$('pw-confirm').value='';
+  $('pw-strength-bar').style.width='0';
+  showToast('パスワードを変更しました');
+};
+$('cancel-pw-btn').onclick=()=>{$('pw-current').value='';$('pw-new').value='';$('pw-confirm').value='';$('pw-strength-bar').style.width='0';['pw-current-error','pw-current-wrong','pw-new-error','pw-confirm-error'].forEach(id=>$(id).classList.remove('show'));};
+
+// ─── PROFILE ──────────────────────────────────────────
+$('save-profile-btn').onclick=()=>{
+  const name=$('profile-name').value.trim(), email=$('profile-email').value.trim();
+  const emailOk=/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  $('profile-name-error').classList.toggle('show',!name);
+  $('profile-email-error').classList.toggle('show',!emailOk);
+  if(!name||!emailOk)return;
+  profileData={name,email,bio:$('profile-bio').value.trim()};
+  $('nav-username').textContent=name;
+  $('profile-avatar').textContent=name.charAt(0).toUpperCase();
+  showToast('プロフィールを保存しました');
+};
+$('cancel-profile-btn').onclick=()=>{
+  $('profile-name').value=profileData.name;
+  $('profile-email').value=profileData.email;
+  $('profile-bio').value=profileData.bio;
+};
+
+// ─── LOGIN ────────────────────────────────────────────
+$('login-btn').onclick=()=>{
+  const u=$('username').value.trim(), p=$('password').value;
+  let ok=true;
+  $('username-error').classList.toggle('show',!u); if(!u)ok=false;
+  $('password-error').classList.toggle('show',!p); if(!p)ok=false;
+  if(!ok)return;
+  if(u!=='admin'||p!=='password'){$('login-error').classList.add('show');return;}
+  $('login-error').classList.remove('show');
+  $('nav-username').textContent=profileData.name;
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  $('app-page').classList.add('active');
+  renderTasks();
+};
+$('password').addEventListener('keydown',e=>{if(e.key==='Enter')$('login-btn').click();});
+$('logout-btn').onclick=()=>{
+  $('username').value='';$('password').value='';
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  $('login-page').classList.add('active');
+};
+
+// ─── OVERLAY CLICK CLOSE ──────────────────────────────
+['task-modal','confirm-modal','member-modal','invite-modal'].forEach(id=>{
+  $(id).addEventListener('click',e=>{if(e.target===$(id))closeModal(id);});
+});
+</script>
+</body>
+</html>
