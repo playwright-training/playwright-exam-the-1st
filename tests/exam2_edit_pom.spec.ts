@@ -12,78 +12,45 @@ test.describe('②POM編集課題', () => {
   });
 
   // ────────────────────────────────────────────
-  // 課題2-1: 担当者フィルター（TaskPage に追加）
+  // 課題2-1: 担当者フィルター・担当者名取得・メモ取得
+  // TaskPage に filterByAssignee / getTaskAssignee / getTaskMemo を追加して使う
   // 実装したら test.fixme → test に書き換えてください
   // ────────────────────────────────────────────
-  test.fixme('担当者フィルターで「田中」を選択するとタスクが絞り込まれる', async ({ page }) => {
+  test.fixme('担当者フィルターで「田中」を選択すると絞り込まれ、担当者名・メモが取得できる', async ({ page }) => {
     const taskPage = new TaskPage(page);
 
-    // 全件表示を確認
+    // 全件数を取得
     const totalCount = await taskPage.getTaskCount();
-    expect(totalCount).toBeGreaterThan(1);
 
     // TODO: TaskPage.filterByAssignee('田中') を呼び出す
-    // 田中のタスクのみに絞られることを確認する
-    // ヒント: 担当者「田中」のタスクはデフォルトデータに2件含まれる
+    // TODO: 絞り込み後の件数が全件より少ないことを確認する
+    // TODO: TaskPage.getTaskAssignee(1) で担当者名が「田中」であることを確認する
+    // TODO: TaskPage.getTaskMemo(1) でメモに「Node.js 18以上が必要」が含まれることを確認する
   });
 
   // ────────────────────────────────────────────
-  // 課題2-2: 担当者取得メソッド（TaskPage に追加）
+  // 課題2-2: 担当者・メモ・ステータス（レビュー中）を設定してタスク追加
+  // TaskModal に selectAssignee / fillMemo を追加し、selectStatus の型に 'review' を追加して使う
   // ────────────────────────────────────────────
-  test.fixme('タスクの担当者名を取得できる', async ({ page }) => {
-    const taskPage = new TaskPage(page);
-
-    // TODO: TaskPage.getTaskAssignee(1) を呼び出し、「田中」であることを確認する
-  });
-
-  // ────────────────────────────────────────────
-  // 課題2-3: メモ取得メソッド（TaskPage に追加）
-  // ────────────────────────────────────────────
-  test.fixme('タスクのメモを取得できる', async ({ page }) => {
-    const taskPage = new TaskPage(page);
-
-    // TODO: タスクID=1 のメモが「Node.js 18以上が必要」であることを確認する
-  });
-
-  // ────────────────────────────────────────────
-  // 課題2-4: レビュー中ステータス（TaskModal に修正）
-  // ────────────────────────────────────────────
-  test.fixme('ステータスを「レビュー中」に設定してタスクを追加できる', async ({ page }) => {
+  test.fixme('担当者・メモ・ステータス（レビュー中）を設定してタスクを追加できる', async ({ page }) => {
     const taskPage  = new TaskPage(page);
     const taskModal = new TaskModal(page);
 
     await taskPage.addTaskButton.click();
-    await taskModal.fillTitle('レビュー待ちタスク');
+    await taskModal.fillTitle('レビュー確認タスク');
 
     // TODO: TaskModal.selectStatus('review') を呼び出す（型も修正すること）
+    // TODO: TaskModal.selectAssignee('鈴木') を呼び出す
+    // TODO: TaskModal.fillMemo('レビュー用メモ') を呼び出す
     await taskModal.save();
 
-    // 追加されたタスクのステータスが「レビュー中」であることを確認
-    // ヒント: 追加後は先頭に表示される
-    const statusText = await taskPage.getTaskStatus(7);
-    expect(statusText).toBe('レビュー中');
+    // TODO: 追加されたタスクのステータスが「レビュー中」であることを確認する
+    // TODO: 追加されたタスクのメモに「レビュー用メモ」が含まれることを確認する
+    // ヒント: 追加後のタスクIDは 7 になる
   });
 
   // ────────────────────────────────────────────
-  // 課題2-5: 担当者・メモ付きでタスクを追加（TaskModal に追加）
-  // ────────────────────────────────────────────
-  test.fixme('担当者・メモを入力してタスクを追加できる', async ({ page }) => {
-    const taskPage  = new TaskPage(page);
-    const taskModal = new TaskModal(page);
-
-    await taskPage.addTaskButton.click();
-    await taskModal.fillTitle('担当者付きタスク');
-
-    // TODO: selectAssignee('鈴木') を呼び出す
-    // TODO: fillMemo('テスト用メモです') を呼び出す
-    await taskModal.save();
-
-    // 追加されたタスクのメモが表示されていることを確認
-    // TODO: getTaskMemo で内容を確認する
-  });
-
-  // ────────────────────────────────────────────
-  // 課題2-6: 下書き保存（TaskModal に追加）
+  // 課題2-3: 下書き保存（TaskModal に saveDraft を追加して使う）
   // ────────────────────────────────────────────
   test.fixme('下書き保存するとステータスが「未着手」でタスクが追加される', async ({ page }) => {
     const taskPage  = new TaskPage(page);
@@ -96,22 +63,8 @@ test.describe('②POM編集課題', () => {
     // TODO: TaskModal.saveDraft() を呼び出す
     // 下書き保存ではステータスが強制的に「未着手」になる仕様
 
-    // 追加されたタスクのステータスが「未着手」であることを確認
-    // TODO: getTaskStatus で確認する
-  });
-
-  // ────────────────────────────────────────────
-  // 課題2-7: バリデーション（完成済み — AAAパターンの実例）
-  // このテストはそのまま動作します。参考にしてください。
-  // ────────────────────────────────────────────
-  test('タスク名を空のまま保存するとエラーが表示される', async ({ page }) => {
-    const taskPage  = new TaskPage(page);
-    const taskModal = new TaskModal(page);
-
-    await taskPage.addTaskButton.click();
-    await taskModal.save();
-
-    expect(await taskModal.isTitleErrorVisible()).toBe(true);
+    // TODO: 追加されたタスクのステータスが「未着手」であることを確認する
+    // ヒント: 追加後のタスクIDは 7 になる
   });
 
 });
