@@ -5,16 +5,21 @@ import { ReportPage } from '../pages/ReportPage';
 test.describe('①AAA設計課題：レポートページ', () => {
 
   // ────────────────────────────────────────────
-  // Arrange共通：ログインとレポートページへの遷移を
-  // beforeEach にまとめてください
+  // Arrange共通：ログイン＋レポートページ遷移（実装済み）
   // ────────────────────────────────────────────
   test.beforeEach(async ({ page }) => {
-    // TODO: LoginPage でログインし、ReportPage に遷移する
+    const login = new LoginPage(page);
+    await login.goto();
+    await login.loginAsAdmin();
+    const reportPage = new ReportPage(page);
+    await reportPage.navigate();
   });
 
   // ────────────────────────────────────────────
   // 課題1-1: 担当者フィルター
-  // 実装したら test.fixme → test に書き換えてください
+  //
+  // ※ test.fixme() はテストを「未実装」としてスキップする機能です。
+  //   実装が完了したら test.fixme → test に書き換えてテストを有効にしてください。
   // ────────────────────────────────────────────
   test.fixme('担当者「田中」で絞り込むとテーブルが2件になる', async ({ page }) => {
     // TODO: 日付フィルターをクリアして全期間にした上で、担当者「田中」でフィルターする

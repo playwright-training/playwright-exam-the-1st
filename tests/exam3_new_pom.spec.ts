@@ -25,7 +25,8 @@ test.describe('③POM新規作成課題', () => {
   //            saveButton, resetButton
   //   メソッド: navigate(), toggle(), save(), reset(), isChecked()
   // ════════════════════════════════════════════
-  // 実装したら test.fixme → test に書き換えてください
+  // ※ test.fixme() はテストを「未実装」としてスキップする機能です。
+  //   実装が完了したら test.fixme → test に書き換えてテストを有効にしてください。
   test.fixme('通知トグルの初期状態を確認し、変更・保存・リセットできる', async ({ page }) => {
     // TODO: NotificationPage を new して navigate() で通知設定ページに遷移する
 

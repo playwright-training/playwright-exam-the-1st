@@ -14,7 +14,9 @@ test.describe('②POM編集課題', () => {
   // ────────────────────────────────────────────
   // 課題2-1: 担当者フィルター・担当者名取得・メモ取得
   // TaskPage に filterByAssignee / getTaskAssignee / getTaskMemo を追加して使う
-  // 実装したら test.fixme → test に書き換えてください
+  //
+  // ※ test.fixme() はテストを「未実装」としてスキップする機能です。
+  //   実装が完了したら test.fixme → test に書き換えてテストを有効にしてください。
   // ────────────────────────────────────────────
   test.fixme('担当者フィルターで「田中」を選択すると絞り込まれ、担当者名・メモが取得できる', async ({ page }) => {
     const taskPage = new TaskPage(page);
