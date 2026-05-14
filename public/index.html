@@ -239,12 +239,9 @@ input:focus,textarea:focus,select:focus{border-color:var(--primary);box-shadow:0
       <div class="section" id="section-report">
         <p class="section-title">レポート</p>
         <div class="report-toolbar">
-          <label style="font-size:.85rem;font-weight:600;margin:0">期間：</label>
-          <select id="report-period" data-testid="report-period">
-            <option value="week">今週</option>
-            <option value="month">今月</option>
-            <option value="all">全期間</option>
-          </select>
+          <label style="font-size:.85rem;font-weight:600;margin:0">期限日：</label>
+          <input type="date" id="report-date" data-testid="report-date" value="2025-04-14" />
+          <button class="btn btn-secondary btn-sm" id="report-clear-date" data-testid="report-clear-date">全期間</button>
           <select id="report-assignee" data-testid="report-assignee">
             <option value="all">担当者：全員</option>
             <option value="田中">田中</option>
@@ -680,14 +677,12 @@ $('invite-send').onclick=()=>{
 
 // ─── REPORT ───────────────────────────────────────────
 function renderReport(){
-  const period=$('report-period').value;
+  const dateVal=$('report-date').value;
   const assignee=$('report-assignee').value;
   let list=tasks;
-  // 期間フィルター（デモ用基準日: 2025-04-14）
-  if(period==='week'){
-    list=list.filter(t=>t.due>='2025-04-08'&&t.due<='2025-04-14');
-  }else if(period==='month'){
-    list=list.filter(t=>t.due>='2025-04-01'&&t.due<='2025-04-30');
+  // 日付フィルター：指定日以前のタスクを表示（空なら全期間）
+  if(dateVal){
+    list=list.filter(t=>t.due&&t.due<=dateVal);
   }
   if(assignee!=='all') list=list.filter(t=>t.assignee===assignee);
   const total=list.length, done=list.filter(t=>t.status==='done').length,
@@ -709,7 +704,8 @@ function renderReport(){
     </tr>
   `).join('');
 }
-$('report-period').onchange=renderReport;
+$('report-date').onchange=renderReport;
+$('report-clear-date').onclick=()=>{$('report-date').value='';renderReport();};
 $('report-assignee').onchange=renderReport;
 $('report-export-btn').onclick=()=>showToast('エクスポートしました（CSV）');
 
