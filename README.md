@@ -1,5 +1,13 @@
 # TaskFlow Playwright 実技試験
 
+- **試験時間**: 90分
+- **AI使用**: 可（Cursor / Claude Code など自由に使ってOK）
+- **質問**: 試験中に不明点があれば手を挙げてください
+
+> **補足**: 本試験では1つの `.spec.ts` ファイルに3つのテストを書く構成になっています。
+> 本来はテストの関心ごとにファイルを分けるのが望ましいですが、試験では課題の提出を優先してください。
+> この点については試験後にフォローします。
+
 ## リポジトリ構成
 
 ```
@@ -17,13 +25,6 @@ playwright-exam/
 │
 └── public/
     └── index.html                # テスト対象サイト
-```
-
-## セットアップ
-
-```bash
-npm install
-npx playwright install chromium
 ```
 
 ## テスト対象サイト
@@ -45,6 +46,13 @@ cd public && python3 -m http.server 3000
 BASE_URL=http://localhost:3000 npx playwright test
 ```
 
+## テスト用アカウント
+
+| 項目 | 値 |
+|------|-----|
+| ユーザー名 | `admin` |
+| パスワード | `password` |
+
 ## テスト実行
 
 ```bash
@@ -64,21 +72,15 @@ npx playwright test exam3
 npx playwright test --ui
 ```
 
-## テスト用アカウント
-
-| 項目 | 値 |
-|------|-----|
-| ユーザー名 | `admin` |
-| パスワード | `password` |
-
 ## 課題概要
 
 ### ① AAA設計課題（`exam1_aaa.spec.ts`）
 
 提供済みの `ReportPage.ts` を使い、レポートページのテストを **AAAパターン**（Arrange-Act-Assert）で作成してください。POMの編集は不要です。
 
+`beforeEach` にはログイン＋レポートページ遷移が実装済みです。これはワークショップで扱った「共通のArrange処理」にあたる部分です。各テストではログイン後の **個別のArrange・Act・Assert** を実装してください。
+
 **ポイント**：
-- `beforeEach` に共通のArrange処理をまとめる
 - 1テストにつき操作の目的を1つに絞る
 - Arrange / Act / Assert が明確に分離されている
 
@@ -100,11 +102,46 @@ npx playwright test --ui
 
 ## 試験の進め方
 
-1. 試験開始前に招待されたリポジトリをクローンしてください
-2. クローンしたディレクトリに移動してください
-3. 自分の名前でブランチを作成してください（例: `exam/田中`）
-4. 依存パッケージとブラウザをインストールしてください
-5. テスト対象サイトにブラウザでアクセスし、画面の動きを確認してください
-6. 課題①→②→③の順に実装してください。各テストファイルとPOMファイル内のTODOコメントが実装のガイドになっています
-7. 全テストがパスすることを確認してください
-8. 変更をコミットし、自分のブランチをプッシュして提出してください
+### 1. リポジトリをクローンする
+
+```bash
+git clone https://github.com/playwright-training/playwright-exam-the-1st.git
+cd playwright-exam-the-1st
+```
+
+### 2. 自分の名前でブランチを作成する
+
+```bash
+git checkout -b exam/自分の名前
+```
+
+### 3. セットアップ
+
+```bash
+npm install
+npx playwright install chromium
+```
+
+### 4. テスト対象サイトを確認する
+
+ブラウザで https://playwright-exam-site.web.app にアクセスし、画面の動きを確認してください。
+
+### 5. 課題を実装する
+
+課題①→②→③の順に実装してください。各テストファイルとPOMファイル内のTODOコメントが実装のガイドになっています。
+
+### 6. テストがパスすることを確認する
+
+```bash
+npx playwright test
+```
+
+### 7. Pull Request を作成して提出する
+
+```bash
+git add .
+git commit -m "試験回答"
+git push origin exam/自分の名前
+```
+
+プッシュ後、GitHub 上で `exam/自分の名前` ブランチから `main` ブランチへの **Pull Request** を作成して提出してください。
