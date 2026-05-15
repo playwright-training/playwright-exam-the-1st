@@ -9,7 +9,25 @@
     "test:exam3": "playwright test exam3"
   },
   "devDependencies": {
-    "@playwright/test": "^1.44.0",
+    "@playwright/test": "^1.59.1",
+    "@types/node": "^25.6.0",
     "typescript": "^5.4.0"
-  }
+  },
+  "description": "- **試験時間**: 90分\r - **AI使用**: 可（Cursor / Claude Code など自由に使ってOK）\r - **質問**: 試験中に不明点があれば手を挙げてください",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/playwright-training/playwright-exam-the-1st.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/playwright-training/playwright-exam-the-1st/issues"
+  },
+  "homepage": "https://github.com/playwright-training/playwright-exam-the-1st#readme"
 }
