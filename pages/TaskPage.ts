@@ -1,38 +1,43 @@
-import { Page, Locator } from '@playwright/test';
+import { Page, Locator } from "@playwright/test";
 
 export class TaskPage {
   readonly page: Page;
   readonly searchInput: Locator;
   readonly filterStatus: Locator;
   // TODO: 担当者フィルターのlocatorを追加する
+  readonly assigneeFilter;
   readonly addTaskButton: Locator;
   readonly taskList: Locator;
   readonly emptyState: Locator;
 
   constructor(page: Page) {
     this.page = page;
-    this.searchInput   = page.getByTestId('search-input');
-    this.filterStatus  = page.getByTestId('filter-status');
+    this.searchInput = page.getByTestId("search-input");
+    this.filterStatus = page.getByTestId("filter-status");
     // TODO: filter-assignee の locator を追加する
-    this.addTaskButton = page.getByTestId('add-task-btn');
-    this.taskList      = page.getByTestId('task-list');
-    this.emptyState    = page.locator('#empty-state');
+    this.assigneeFilter = page.getByTestId("filter-assignee");
+    this.addTaskButton = page.getByTestId("add-task-btn");
+    this.taskList = page.getByTestId("task-list");
+    this.emptyState = page.locator("#empty-state");
   }
 
   async navigate() {
-    await this.page.getByTestId('nav-tasks').click();
+    await this.page.getByTestId("nav-tasks").click();
   }
 
   async search(keyword: string) {
     await this.searchInput.fill(keyword);
   }
 
-  async filterByStatus(status: 'all' | 'todo' | 'doing' | 'review' | 'done') {
+  async filterByStatus(status: "all" | "todo" | "doing" | "review" | "done") {
     await this.filterStatus.selectOption(status);
   }
 
   // TODO: 担当者でフィルターするメソッドを追加する
   // filterByAssignee(assignee: string): Promise<void>
+  async filterfilterByAssignee(assignee: string): Promise<void> {
+    await this.assigneeFilter.selectOption(assignee);
+  }
 
   async getTaskCount(): Promise<number> {
     return await this.taskList.locator('[data-testid="task-card"]').count();
@@ -48,9 +53,15 @@ export class TaskPage {
 
   // TODO: 担当者テキストを取得するメソッドを追加する
   // getTaskAssignee(id: number): Promise<string>
+  async getAssinName(id: number): Promise<string> {
+    return await this.page.getByTestId(`filter-assignee-${id}`).innerText();
+  }
 
   // TODO: メモテキストを取得するメソッドを追加する
   // getTaskMemo(id: number): Promise<string>
+  async getTaskMemo(id: number): Promise<string> {
+    return await this.page.getByTestId(`task-memo-${id}`).innerText();
+  }
 
   async clickEdit(id: number) {
     await this.page.getByTestId(`edit-btn-${id}`).click();
@@ -61,6 +72,6 @@ export class TaskPage {
   }
 
   async confirmDelete() {
-    await this.page.getByTestId('confirm-delete').click();
+    await this.page.getByTestId("confirm-delete").click();
   }
 }
