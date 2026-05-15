@@ -1,8 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { LoginPage } from '../pages/LoginPage';
-// TODO: 作成したPOMをインポートする
-// import { NotificationPage } from '../pages/NotificationPage';
-// import { PasswordPage } from '../pages/PasswordPage';
+import { NotificationPage } from '../pages/NotificationPage';
+import { PasswordPage } from '../pages/PasswordPage';
 
 test.describe('③POM新規作成課題', () => {
 
@@ -27,22 +26,30 @@ test.describe('③POM新規作成課題', () => {
   // ════════════════════════════════════════════
   // ※ test.fixme() はテストを「未実装」としてスキップする機能です。
   //   実装が完了したら test.fixme → test に書き換えてテストを有効にしてください。
-  test.fixme('通知トグルの初期状態を確認し、変更・保存・リセットできる', async ({ page }) => {
-    // TODO: NotificationPage を new して navigate() で通知設定ページに遷移する
+  test('通知トグルの初期状態を確認し、変更・保存・リセットできる', async ({ page }) => {
+    // Arrange
+    const notificationPage = new NotificationPage(page);
+    await notificationPage.navigate();
 
-    // TODO: 初期状態を確認する（5つのトグルlocatorを全て使用）
-    // notif-assign: ON(true)
-    // notif-due: ON(true)
-    // notif-comment: OFF(false)
-    // notif-mention: ON(true)
-    // notif-weekly: OFF(false)
+    // Assert: 初期状態を確認
+    await expect(notificationPage.notifAssign).toBeChecked();
+    await expect(notificationPage.notifDue).toBeChecked();
+    await expect(notificationPage.notifComment).not.toBeChecked();
+    await expect(notificationPage.notifMention).toBeChecked();
+    await expect(notificationPage.notifWeekly).not.toBeChecked();
 
-    // TODO: notif-comment トグルをONにして保存する
-    // トーストに「通知設定を保存しました」が表示されることを確認する
-    // ヒント: page.getByRole('status') でトースト要素を取得できる
+    // Act: notif-comment をONにして保存
+    await notificationPage.toggle(notificationPage.notifComment);
+    await notificationPage.save();
 
-    // TODO: リセットボタンをクリックする
-    // notif-comment が再びOFF(false)になっていることを確認する
+    // Assert: トースト確認
+    await expect(page.getByRole('status')).toHaveText('通知設定を保存しました');
+
+    // Act: リセット
+    await notificationPage.reset();
+
+    // Assert: notif-comment がOFFに戻る
+    await expect(notificationPage.notifComment).not.toBeChecked();
   });
 
   // ════════════════════════════════════════════
@@ -57,34 +64,46 @@ test.describe('③POM新規作成課題', () => {
   //            isCurrentErrorVisible(), isCurrentWrongErrorVisible(),
   //            isNewErrorVisible(), isConfirmErrorVisible()
   // ════════════════════════════════════════════
-  test.fixme('正しい情報を入力してパスワードを変更できる', async ({ page }) => {
-    // TODO: PasswordPage を new して navigate() でパスワード変更ページに遷移する
+  test('正しい情報を入力してパスワードを変更できる', async ({ page }) => {
+    // Arrange
+    const passwordPage = new PasswordPage(page);
+    await passwordPage.navigate();
 
-    // TODO: changePassword('password', 'newPassword1', 'newPassword1') を呼び出す
-    // トーストに「パスワードを変更しました」が表示されることを確認する
+    // Act
+    await passwordPage.changePassword('password', 'newPassword1', 'newPassword1');
 
-    // TODO: 変更後、入力フィールドがクリアされていることを確認する
-    // currentInput, newInput, confirmInput がそれぞれ空であること
+    // Assert: トースト確認
+    await expect(page.getByRole('status')).toHaveText('パスワードを変更しました');
+
+    // Assert: フィールドがクリアされている
+    await expect(passwordPage.currentInput).toHaveValue('');
+    await expect(passwordPage.newInput).toHaveValue('');
+    await expect(passwordPage.confirmInput).toHaveValue('');
   });
 
   // ════════════════════════════════════════════
   // 課題3-3: パスワード変更バリデーション
   // ════════════════════════════════════════════
-  test.fixme('パスワード変更のバリデーションエラーが正しく表示される', async ({ page }) => {
-    // TODO: PasswordPage を new して navigate() でパスワード変更ページに遷移する
+  test('パスワード変更のバリデーションエラーが正しく表示される', async ({ page }) => {
+    // Arrange
+    const passwordPage = new PasswordPage(page);
+    await passwordPage.navigate();
 
-    // TODO: 現在のパスワードが間違っている場合のエラーを確認する
-    // changePassword('wrongpass', 'newPassword1', 'newPassword1') を呼び出す
-    // isCurrentWrongErrorVisible() が true であることを確認する
+    // Act & Assert: 現在のパスワードが間違っている場合
+    await passwordPage.changePassword('wrongpass', 'newPassword1', 'newPassword1');
+    expect(await passwordPage.isCurrentWrongErrorVisible()).toBe(true);
 
-    // TODO: cancel() でフィールドをクリアする
-    // currentInput が空になっていることを確認する
+    // Act: キャンセルでフィールドをクリア
+    await passwordPage.cancel();
 
-    // TODO: 新しいパスワードが短すぎる場合のエラーを確認する
-    // fillCurrentPassword('password') を呼び出す
-    // fillNewPassword('abc') を呼び出す
-    // 保存ボタンをクリックする
-    // isNewErrorVisible() が true であることを確認する
+    // Assert: フィールドがクリアされている
+    await expect(passwordPage.currentInput).toHaveValue('');
+
+    // Act & Assert: 新しいパスワードが短すぎる場合
+    await passwordPage.fillCurrentPassword('password');
+    await passwordPage.fillNewPassword('abc');
+    await passwordPage.saveButton.click();
+    expect(await passwordPage.isNewErrorVisible()).toBe(true);
   });
 
 });
